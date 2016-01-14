@@ -1,2 +1,4 @@
-target
+ChatClient/target
+ChatServer/target
 *.class
+*.cache
