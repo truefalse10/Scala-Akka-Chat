@@ -7,19 +7,32 @@ import common._
 object HelloRemote extends App  {
   val system = ActorSystem("HelloRemoteSystem")
   val remoteActor = system.actorOf(Props[RemoteActor], name = "RemoteActor")
-  remoteActor ! "START"
+  remoteActor ! "STARTSERVER"
 }
 
 class RemoteActor extends Actor {
 
+  var clients: List[ActorRef] = List()
+
   def receive = {
-    case "START" =>
-        println("The RemoteActor has started")
+    case "STARTSERVER" =>
+        println("server started")
+
+    case "LOGIN" =>
+        //add new client to clients list
+        clients:+sender
+        println("new client registered: ")
 
     case ChatMessage(from, message) =>
         val response = "["+ from +"] " + message
-        println(response)
-        sender ! ChatMessage(from, message)
+
+        println("ChatMessage from client: " + response)
+
+        for (client <- clients) {
+          client ! ChatMessage(from, message)
+        }
+
+
 
     case _ =>
         println("something unexpected")
