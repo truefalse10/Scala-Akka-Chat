@@ -1,16 +1,23 @@
 package local
 
 import akka.actor._
+import Console._
+import Stream._
 import common._
 
 object Local extends App {
 
   implicit val system = ActorSystem("LocalSystem")
   val localActor = system.actorOf(Props[LocalActor], name = "LocalActor")  // the local actor
-  localActor ! "START"                                                     // start the action
   localActor ! ChatMessage("client", "mymessage with some chars")
 
+  Stream.continually(Console.readLine(">>> ")).takeWhile( _ ne null) foreach { line =>
+    localActor ! LocalMessage(line);
+  }
 }
+
+case class LocalMessage(message: String)
+
 
 class LocalActor extends Actor {
 
@@ -18,11 +25,11 @@ class LocalActor extends Actor {
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
   def receive = {
-    case "START" =>
-        remote ! ChatMessage("client", "Hello from the LocalActor")
+    case LocalMessage(message) =>
+        remote ! ChatMessage("client", message)
 
     case ChatMessage(from, message) =>
-        println(message)
+        println(s"server: $message")
 
     case _ =>
         println("something unexpected")
