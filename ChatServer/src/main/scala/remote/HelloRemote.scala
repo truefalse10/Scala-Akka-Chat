@@ -18,10 +18,10 @@ class RemoteActor extends Actor {
     case "STARTSERVER" =>
         println("server started")
 
-    case "LOGIN" =>
+    case Login(user) =>
         //add new client to clients list
         clients:+sender
-        println("new client registered: ")
+        println(s"new client registered: $user")
 
     case ChatMessage(from, message) =>
         val response = "["+ from +"] " + message

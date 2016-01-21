@@ -9,8 +9,7 @@ object Local extends App {
 
   implicit val system = ActorSystem("LocalSystem")
   val localActor = system.actorOf(Props[LocalActor], name = "LocalActor")  // the local actor
-  localActor ! "STARTCLIENT"                                                     // start the action
-  localActor ! ChatMessage("client", "mymessage with some chars")
+  localActor ! "STARTCLIENT"
 
   Stream.continually(Console.readLine(">>> ")).takeWhile( _ ne null) foreach { line =>
     localActor ! LocalMessage(line);
@@ -22,15 +21,16 @@ case class LocalMessage(message: String)
 
 class LocalActor extends Actor {
 
+  val user = "Sebastian"
   // create the remote actor (Akka 2.1 syntax)
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
   def receive = {
     case "STARTCLIENT" =>
-        remote ! "LOGIN"
+        remote ! Login(user)
 
     case LocalMessage(message) =>
-        remote ! ChatMessage("client", message)
+        remote ! ChatMessage(user, message)
 
     case ChatMessage(from, message) =>
         println(s"server: $message")
