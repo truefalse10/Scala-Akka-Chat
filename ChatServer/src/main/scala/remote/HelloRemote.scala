@@ -25,14 +25,10 @@ class RemoteActor extends Actor {
 
     case ChatMessage(from, message) =>
         val response = "["+ from +"] " + message
-
         println("ChatMessage from client: " + response)
-
         for (client <- clients) {
           client ! ChatMessage(from, message)
         }
-
-
 
     case _ =>
         println("something unexpected")
