@@ -9,14 +9,16 @@ import scala.util.Random
 
 object Local extends App {
 
-  val nickname = args(0)
-
   implicit val system = ActorSystem("LocalSystem")
   val localActor = system.actorOf(Props[LocalActor], name = "LocalActor")  // the local actor
-  localActor ! Nickname(nickname)
 
+  println("Welcome. Use /login <name> to register at the server")
   Stream.continually(Console.readLine(">>> ")).takeWhile( _ ne null) foreach { line =>
-    localActor ! LocalMessage(line);
+    if (line.startsWith("/login ")) {
+      localActor ! Nickname(line.split(" ").last)
+    } else {
+      localActor ! LocalMessage(line);
+    }
   }
 }
 
@@ -27,7 +29,7 @@ case class Nickname(message: String)
 
 class LocalActor extends Actor {
 
-  var user = ""
+  var user = Random.nextString(7)
   // create the remote actor (Akka 2.1 syntax)
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
@@ -35,8 +37,8 @@ class LocalActor extends Actor {
     case LocalMessage(message) =>
         remote ! ChatMessage(user, message)
 
-    case Nickname(message) =>
-      user = if (message != null) message else Random.nextString(7)
+    case Nickname(name) =>
+      if (name != null && !name.isEmpty) user = name
       remote ! Login(user)
 
     case ChatMessage(from, message) =>
