@@ -20,12 +20,12 @@ class RemoteActor extends Actor {
 
     case Login(user) =>
         //add new client to clients list
-        clients:+sender
+        clients = sender :: clients
         println(s"new client registered: $user")
 
     case ChatMessage(from, message) =>
         val response = "["+ from +"] " + message
-        println("ChatMessage from client: " + response)
+        println(s"ChatMessage from client: $response")
         for (client <- clients) {
           client ! ChatMessage(from, message)
         }
