@@ -23,32 +23,30 @@ object Local extends App {
 }
 
 case class LocalMessage(message: String)
-
-case class Nickname(message: String)
+case class Nickname(name: String)
 
 
 class LocalActor extends Actor {
-
-  var user = Random.nextString(7)
-  // create the remote actor (Akka 2.1 syntax)
+  var user = ""
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
   def receive = {
     case LocalMessage(message) =>
-        remote ! ChatMessage(user, message)
+      remote ! ChatMessage(user, message)
 
     case Nickname(name) =>
       if (name != null && !name.isEmpty) user = name
       remote ! Login(user)
 
     case ChatMessage(from, message) =>
-        println(s"server: $message")
+      if (!user.equals(from)) output(s"<$from> $message")
 
     case _ =>
-        println("something unexpected")
+      output("something unexpected")
   }
 
-  def setNick(nickname: String) = {
-
+  def output(message: String) = {
+    println(s"\r$message")
+    print(">>> ")
   }
 }
