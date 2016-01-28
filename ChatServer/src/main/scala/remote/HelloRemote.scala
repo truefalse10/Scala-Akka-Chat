@@ -12,7 +12,7 @@ object HelloRemote extends App  {
 
 class RemoteActor extends Actor {
 
-  var clients: List[ActorRef] = List()
+  var clients: Map[ActorRef, String] = Map()
 
   def receive = {
     case "STARTSERVER" =>
@@ -20,15 +20,16 @@ class RemoteActor extends Actor {
 
     case Login(user) =>
         //add new client to clients list
-        clients = sender :: clients
+        clients = clients + (sender -> user)
         println(s"new client registered: $user")
+
+    case UserListRequest(user) =>
+      sender ! UserListResponse(clients.values.toList diff List(user) mkString ", " )
 
     case ChatMessage(from, message) =>
         val response = "["+ from +"] " + message
         println(s"ChatMessage from client: $response")
-        for (client <- clients) {
-          client ! ChatMessage(from, message)
-        }
+        clients.keys foreach { _ ! ChatMessage(from, message) }
 
     case _ =>
         println("something unexpected")

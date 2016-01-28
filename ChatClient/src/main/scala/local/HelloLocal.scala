@@ -2,10 +2,7 @@ package local
 
 import akka.actor._
 import Console._
-import Stream._
 import common._
-
-import scala.util.Random
 
 object Local extends App {
 
@@ -17,7 +14,7 @@ object Local extends App {
     if (line.startsWith("/login ")) {
       localActor ! Nickname(line.split(" ").last)
     } else {
-      localActor ! LocalMessage(line);
+      localActor ! LocalMessage(line)
     }
   }
 }
@@ -25,12 +22,14 @@ object Local extends App {
 case class LocalMessage(message: String)
 case class Nickname(name: String)
 
-
 class LocalActor extends Actor {
   var user = ""
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
   def receive = {
+    case LocalMessage(message) if message equals "/ls" =>
+      remote ! UserListRequest(user)
+
     case LocalMessage(message) =>
       remote ! ChatMessage(user, message)
 
@@ -40,6 +39,9 @@ class LocalActor extends Actor {
 
     case ChatMessage(from, message) =>
       if (!user.equals(from)) output(s"<$from> $message")
+
+    case UserListResponse(users) =>
+      output(s"Users online: $users")
 
     case _ =>
       output("something unexpected")
