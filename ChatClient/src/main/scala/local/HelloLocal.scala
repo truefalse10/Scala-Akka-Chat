@@ -30,6 +30,10 @@ class LocalActor extends Actor {
     case LocalMessage(message) if message equals "/ls" =>
       remote ! UserListRequest(user)
 
+    case LocalMessage(message) if message startsWith "@" =>
+      val index = message indexOf " "
+      remote ! PrivateChatMessage(user, message substring(1, index), message substring index+1 )
+
     case LocalMessage(message) =>
       remote ! ChatMessage(user, message)
 
