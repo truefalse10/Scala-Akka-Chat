@@ -12,7 +12,6 @@ import scala.concurrent.duration.DurationInt
 object Local extends App {
 
   val greeting: String = "Use /login <name> to register at the server."
-
   implicit val system = ActorSystem("LocalSystem")
   val localActor = system.actorOf(Props[LocalActor], name = "LocalActor")  // the local actor
 
@@ -31,6 +30,7 @@ case class Nickname(name: String)
 
 class LocalActor extends Actor {
   var user = ""
+  var isLoggedIn = false;
   val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
 
   val nameExists: String = "This name already exists. Please choose another one."
@@ -45,7 +45,13 @@ class LocalActor extends Actor {
       remote ! PrivateChatMessage(user, message substring(1, index), message substring index+1 )
 
     case LocalMessage(message) =>
-      remote ! ChatMessage(user, message)
+      if (isLoggedIn) {
+        remote ! ChatMessage(user, message)
+      }
+      else {
+        output("You have to login before you can start messaging. Use /login <name> to register at the server.")
+      }
+
 
     case PublicMessage(from, message) =>
       if (!user.equals(from)) output(s"<$from> $message")
@@ -67,6 +73,7 @@ class LocalActor extends Actor {
         case "Ok" =>
           remote ! Login(name)
           user = name
+          isLoggedIn = true
           output(s"Welcome, $user")
         case "Invalid" => output(nameInvalid)
         case "Dupe" => output(nameExists)
