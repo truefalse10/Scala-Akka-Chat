@@ -53,8 +53,8 @@ class LocalActor extends Actor {
       }
 
 
-    case PublicMessage(from, message) =>
-      if (!user.equals(from)) output(s"<$from> $message")
+    case PublicMessage(from, message, timestamp) =>
+      if (!user.equals(from)) output(s"<$from $timestamp> $message")
 
     case PrivateMessage(from, message) =>
       if (!user.equals(from)) output(s"<$from> <private> $message")

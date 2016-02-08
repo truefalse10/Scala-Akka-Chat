@@ -2,6 +2,8 @@ package remote
 
 import akka.actor._
 import common._
+import java.util.Calendar
+import java.text.SimpleDateFormat
 
 object HelloRemote extends App  {
   val system = ActorSystem("HelloRemoteSystem")
@@ -39,9 +41,10 @@ class RemoteActor extends Actor {
 
     case ChatMessage(from, message) =>
         val response = s"[$from] $message"
-        println(s"ChatMessage from client: $response")
+        val timestamp = getTimeStamp
+        println(s"[$timestamp] ChatMessage from client: $response")
 
-        clients.values foreach { _ ! PublicMessage(from, message) }
+        clients.values foreach { _ ! PublicMessage(from, message, timestamp) }
 
     case PrivateChatMessage(from, to, message) =>
         clients get to match {
@@ -51,5 +54,11 @@ class RemoteActor extends Actor {
 
     case _ =>
         println("something unexpected")
+  }
+
+  def getTimeStamp = {
+    val hourFormat: SimpleDateFormat = new SimpleDateFormat("hh:mm:ss")
+    val time = Calendar.getInstance().getTime()
+    hourFormat.format(time)
   }
 }
