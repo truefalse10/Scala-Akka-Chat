@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat
 class Server extends Actor {
 
   var clients: Map[String, ActorRef] = Map()
+  var clientList: Clients[ActorRef] = new Clients()
 
   def receive = {
     case "STARTSERVER" =>
@@ -27,7 +28,8 @@ class Server extends Actor {
       clients.values foreach { _ ! Notify(s"$name is now online") }
 
       //add new client to clients map
-      clients = clients + (name -> sender)
+      // clients = clients + (name -> sender)
+      clientList.connect(name, sender)
       println(s"new client registered: $name")
 
     case UserListRequest(user) =>
@@ -38,11 +40,16 @@ class Server extends Actor {
         val timestamp = getTimeStamp
         println(s"[$timestamp] ChatMessage from client: $response")
 
-        clients.values foreach { _ ! PublicMessage(from, message, timestamp) }
+        // clients.values foreach { _ ! PublicMessage(from, message) }
+        clientList foreach { _.reference ! PublicMessage(from, message, timestamp) }
 
     case PrivateChatMessage(from, to, message) =>
-        clients get to match {
+        /* clients get to match {
           case Some(recipient: ActorRef) => recipient ! PrivateMessage(from, message)
+          case None => sender ! Notify(s"User $to offline, message not delivered")
+        } */
+        clientList.withNick(to) match {
+          case Some(client: Client[ActorRef]) => client.reference ! PrivateMessage(from, message)
           case None => sender ! Notify(s"User $to offline, message not delivered")
         }
 
