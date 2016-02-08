@@ -10,3 +10,4 @@ case class UserListRequest(user: String)
 case class UserListResponse(users: String)
 case class ValidateName(user: String)
 case class Login(user: String)
+case class Logout

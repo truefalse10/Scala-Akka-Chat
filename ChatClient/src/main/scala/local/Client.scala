@@ -63,6 +63,9 @@ class Client extends Actor {
         case _ => throw new IllegalStateException("Unknown server response")
       }
 
+    case Logout =>
+      remote ! Logout
+
     case _ =>
       output("something unexpected")
   }

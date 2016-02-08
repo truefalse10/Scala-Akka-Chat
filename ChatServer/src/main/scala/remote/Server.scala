@@ -7,8 +7,7 @@ import java.text.SimpleDateFormat
 
 class Server extends Actor {
 
-  var clients: Map[String, ActorRef] = Map()
-  var clientList: Clients[ActorRef] = new Clients()
+  var clients: Clients[ActorRef] = new Clients()
 
   def receive = {
     case "STARTSERVER" =>
@@ -17,7 +16,7 @@ class Server extends Actor {
     case ValidateName(name) =>
       if ((name startsWith "/login") || name == null || name.isEmpty)
         sender ! "Invalid"
-      else if (clients.keys.exists(_ == name))
+      else if (clients.connected(name))
         sender ! "Dupe"
       else {
         sender ! "Ok"
@@ -25,34 +24,36 @@ class Server extends Actor {
 
     case Login(name) =>
       // notify other users
-      clients.values foreach { _ ! Notify(s"$name is now online") }
+      clients foreach { _.reference ! Notify(s"$name is now online") }
 
       //add new client to clients map
-      // clients = clients + (name -> sender)
-      clientList.connect(name, sender)
+      clients.connect(name, sender)
       println(s"new client registered: $name")
 
     case UserListRequest(user) =>
-      sender ! UserListResponse(clients.keys.toList diff List(user) mkString ", " )
+      sender ! UserListResponse(clients.except(user).map{ _.nick }.mkString(", "))
 
     case ChatMessage(from, message) =>
         val response = s"[$from] $message"
         val timestamp = getTimeStamp
         println(s"[$timestamp] ChatMessage from client: $response")
 
-        // clients.values foreach { _ ! PublicMessage(from, message) }
-        clientList foreach { _.reference ! PublicMessage(from, message, timestamp) }
+        clients foreach { _.reference ! PublicMessage(from, message, timestamp) }
 
     case PrivateChatMessage(from, to, message) =>
-        /* clients get to match {
-          case Some(recipient: ActorRef) => recipient ! PrivateMessage(from, message)
-          case None => sender ! Notify(s"User $to offline, message not delivered")
-        } */
-        clientList.withNick(to) match {
+        clients.withNick(to) match {
           case Some(client: Client[ActorRef]) => client.reference ! PrivateMessage(from, message)
           case None => sender ! Notify(s"User $to offline, message not delivered")
         }
-
+    case Logout =>
+      clients.withRef(sender) match {
+        case Some(client: Client[ActorRef]) => {
+          println(s"Disconnecting ${client.nick}")
+          clients.disconnect(sender)
+          clients foreach { _.reference ! Notify(s"${client.nick} is now offline") }
+        }
+        case None => println("Unknown/stale client tried to disconnect, ignoring")
+      }
     case _ =>
         println("something unexpected")
   }
