@@ -1,37 +1,20 @@
 package local
 
+import Console._
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import Console._
 import common._
-
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-
-object Local extends App {
-
-  val greeting: String = "Use /login <name> to register at the server."
-  implicit val system = ActorSystem("LocalSystem")
-  val localActor = system.actorOf(Props[LocalActor], name = "LocalActor")  // the local actor
-
-  println(greeting)
-  Stream.continually(Console.readLine(">>> ")).takeWhile( _ ne null) foreach { line =>
-    if (line.startsWith("/login ")) {
-      localActor ! Nickname(line.split(" ").last)
-    } else {
-      localActor ! LocalMessage(line)
-    }
-  }
-}
 
 case class LocalMessage(message: String)
 case class Nickname(name: String)
 
-class LocalActor extends Actor {
+class Client extends Actor {
   var user = ""
   var isLoggedIn = false;
-  val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/RemoteActor")
+  val remote = context.actorFor("akka.tcp://HelloRemoteSystem@127.0.0.1:5150/user/Server")
 
   val nameExists: String = "This name already exists. Please choose another one."
   val nameInvalid: String = "Please choose a valid name!"

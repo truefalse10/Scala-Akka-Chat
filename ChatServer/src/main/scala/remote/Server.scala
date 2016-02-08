@@ -5,13 +5,7 @@ import common._
 import java.util.Calendar
 import java.text.SimpleDateFormat
 
-object HelloRemote extends App  {
-  val system = ActorSystem("HelloRemoteSystem")
-  val remoteActor = system.actorOf(Props[RemoteActor], name = "RemoteActor")
-  remoteActor ! "STARTSERVER"
-}
-
-class RemoteActor extends Actor {
+class Server extends Actor {
 
   var clients: Map[String, ActorRef] = Map()
 
